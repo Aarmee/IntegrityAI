@@ -1,0 +1,40 @@
+HELP.md
+
+# Application configuration with secrets
+src/main/resources/application.properties
+
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Keep Maven target folders ignored
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# STS / Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Build
+build/
+
+# VS Code
+.vscode/
