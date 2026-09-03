@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="submission-service" />
         <module name="faculty-service" />
         <module name="auth-service" />
       </profile>
@@ -15,6 +16,7 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="auth-service" options="-parameters" />
       <module name="faculty-service" options="-parameters" />
+      <module name="submission-service" options="-parameters" />
     </option>
   </component>
 </project>
