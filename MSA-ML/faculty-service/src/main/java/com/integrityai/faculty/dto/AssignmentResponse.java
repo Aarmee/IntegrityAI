@@ -11,6 +11,8 @@ public class AssignmentResponse {
     private String description;
     private String subject;
     private LocalDateTime deadline;
+    private String targetCourse;
+    private String targetSemester;
     private LocalDateTime createdAt;
 
     public AssignmentResponse(
@@ -28,6 +30,28 @@ public class AssignmentResponse {
         this.description = description;
         this.subject = subject;
         this.deadline = deadline;
+        this.createdAt = createdAt;
+    }
+
+    public AssignmentResponse(
+            UUID assignmentId,
+            UUID facultyId,
+            String title,
+            String description,
+            String subject,
+            LocalDateTime deadline,
+            String targetCourse,
+            String targetSemester,
+            LocalDateTime createdAt) {
+
+        this.assignmentId = assignmentId;
+        this.facultyId = facultyId;
+        this.title = title;
+        this.description = description;
+        this.subject = subject;
+        this.deadline = deadline;
+        this.targetCourse = targetCourse;
+        this.targetSemester = targetSemester;
         this.createdAt = createdAt;
     }
 
@@ -53,6 +77,14 @@ public class AssignmentResponse {
 
     public LocalDateTime getDeadline() {
         return deadline;
+    }
+
+    public String getTargetCourse() {
+        return targetCourse;
+    }
+
+    public String getTargetSemester() {
+        return targetSemester;
     }
 
     public LocalDateTime getCreatedAt() {

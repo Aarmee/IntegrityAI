@@ -10,7 +10,7 @@ import java.util.UUID;
 public class Assignment {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "assignment_id", updatable = false, nullable = false)
     private UUID assignmentId;
 
@@ -28,6 +28,12 @@ public class Assignment {
 
     @Column(name = "deadline", nullable = false)
     private LocalDateTime deadline;
+
+    @Column(name = "target_course", length = 100)
+    private String targetCourse;
+
+    @Column(name = "target_semester", length = 20)
+    private String targetSemester;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -94,5 +100,21 @@ public class Assignment {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getTargetCourse() {
+        return targetCourse;
+    }
+
+    public void setTargetCourse(String targetCourse) {
+        this.targetCourse = targetCourse;
+    }
+
+    public String getTargetSemester() {
+        return targetSemester;
+    }
+
+    public void setTargetSemester(String targetSemester) {
+        this.targetSemester = targetSemester;
     }
 }

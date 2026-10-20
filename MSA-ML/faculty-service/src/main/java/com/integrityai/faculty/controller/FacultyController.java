@@ -4,6 +4,8 @@ import com.integrityai.faculty.dto.FacultyRequest;
 import com.integrityai.faculty.dto.FacultyResponse;
 import com.integrityai.faculty.service.FacultyService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/faculty")
+@Tag(name = "Faculty", description = "Faculty profile management APIs")
 public class FacultyController {
 
     private final FacultyService facultyService;
@@ -26,6 +29,7 @@ public class FacultyController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a faculty profile")
     public ResponseEntity<FacultyResponse> createFaculty(
             @Valid @RequestBody FacultyRequest request) {
 
@@ -35,6 +39,7 @@ public class FacultyController {
     }
 
     @GetMapping("/{facultyId}")
+    @Operation(summary = "Get faculty by ID")
     public ResponseEntity<FacultyResponse> getFaculty(
             @PathVariable UUID facultyId) {
 
@@ -44,6 +49,7 @@ public class FacultyController {
     }
 
     @GetMapping
+    @Operation(summary = "Get all faculty")
     public ResponseEntity<List<FacultyResponse>> getAllFaculty() {
 
         return ResponseEntity.ok(

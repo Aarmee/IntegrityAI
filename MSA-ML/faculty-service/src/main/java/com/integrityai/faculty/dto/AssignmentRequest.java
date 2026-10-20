@@ -23,6 +23,9 @@ public class AssignmentRequest {
     @NotNull
     private LocalDateTime deadline;
 
+    private String targetCourse;
+    private String targetSemester;
+
     public UUID getFacultyId() {
         return facultyId;
     }
@@ -61,5 +64,21 @@ public class AssignmentRequest {
 
     public void setDeadline(LocalDateTime deadline) {
         this.deadline = deadline;
+    }
+
+    public String getTargetCourse() {
+        return targetCourse;
+    }
+
+    public void setTargetCourse(String targetCourse) {
+        this.targetCourse = targetCourse;
+    }
+
+    public String getTargetSemester() {
+        return targetSemester;
+    }
+
+    public void setTargetSemester(String targetSemester) {
+        this.targetSemester = targetSemester;
     }
 }

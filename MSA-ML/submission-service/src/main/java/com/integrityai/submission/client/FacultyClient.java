@@ -7,9 +7,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.UUID;
 
+/**
+ * Feign client for faculty-service.
+ * Uses Eureka service-name discovery (lb://faculty-service).
+ * The url fallback is only used if Eureka is unavailable.
+ */
 @FeignClient(
         name = "faculty-service",
-        url = "${faculty.service.url}"
+        url = "${faculty.service.url:}"
 )
 public interface FacultyClient {
 

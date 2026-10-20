@@ -1,5 +1,7 @@
 package com.integrityai.faculty.service;
 
+import com.integrityai.faculty.dto.AssignmentRequest;
+import com.integrityai.faculty.dto.AssignmentResponse;
 import com.integrityai.faculty.entity.Assignment;
 import com.integrityai.faculty.repository.AssignmentRepository;
 import org.springframework.stereotype.Service;
@@ -16,89 +18,97 @@ public class AssignmentService {
         this.assignmentRepository = assignmentRepository;
     }
 
-    // Create assignment
-    public Assignment createAssignment(Assignment assignment) {
+    // =========================
+    // CREATE
+    // =========================
 
-        if (assignment.getFacultyId() == null) {
-            throw new RuntimeException("Faculty ID is required");
-        }
+    public AssignmentResponse createAssignment(AssignmentRequest request) {
 
-        if (assignment.getTitle() == null ||
-                assignment.getTitle().trim().isEmpty()) {
-            throw new RuntimeException("Assignment title is required");
-        }
+        Assignment assignment = new Assignment();
+        assignment.setFacultyId(request.getFacultyId());
+        assignment.setTitle(request.getTitle());
+        assignment.setDescription(request.getDescription());
+        assignment.setSubject(request.getSubject());
+        assignment.setDeadline(request.getDeadline());
+        assignment.setTargetCourse(request.getTargetCourse());
+        assignment.setTargetSemester(request.getTargetSemester());
 
-        if (assignment.getSubject() == null ||
-                assignment.getSubject().trim().isEmpty()) {
-            throw new RuntimeException("Subject is required");
-        }
-
-        if (assignment.getDeadline() == null) {
-            throw new RuntimeException("Deadline is required");
-        }
-
-        return assignmentRepository.save(assignment);
+        Assignment saved = assignmentRepository.save(assignment);
+        return toResponse(saved);
     }
 
-    // Get all assignments
-    public List<Assignment> getAllAssignments() {
-        return assignmentRepository.findAll();
+    // =========================
+    // GET ALL
+    // =========================
+
+    public List<AssignmentResponse> getAllAssignments() {
+        return assignmentRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    // Get assignment by ID
-    public Assignment getAssignmentById(UUID assignmentId) {
+    // =========================
+    // GET BY ID
+    // =========================
 
-        return assignmentRepository.findById(assignmentId)
+    public AssignmentResponse getAssignmentById(UUID assignmentId) {
+
+        Assignment assignment = assignmentRepository
+                .findById(assignmentId)
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Assignment not found with ID: " + assignmentId
                         )
                 );
+
+        return toResponse(assignment);
     }
 
-    // Get assignments by faculty ID
-    public List<Assignment> getAssignmentsByFaculty(UUID facultyId) {
-        return assignmentRepository.findByFacultyId(facultyId);
+    // =========================
+    // GET BY FACULTY
+    // =========================
+
+    public List<AssignmentResponse> getAssignmentsByFaculty(UUID facultyId) {
+        return assignmentRepository.findByFacultyId(facultyId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    // Update assignment
-    public Assignment updateAssignment(
-            UUID assignmentId,
-            Assignment updatedAssignment) {
+    // =========================
+    // UPDATE
+    // =========================
 
-        Assignment existingAssignment =
-                assignmentRepository.findById(assignmentId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Assignment not found with ID: "
-                                                + assignmentId
-                                )
-                        );
+    public AssignmentResponse updateAssignment(UUID assignmentId, AssignmentRequest request) {
 
-        existingAssignment.setFacultyId(
-                updatedAssignment.getFacultyId()
-        );
+        Assignment existing = assignmentRepository
+                .findById(assignmentId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Assignment not found with ID: " + assignmentId
+                        )
+                );
 
-        existingAssignment.setTitle(
-                updatedAssignment.getTitle()
-        );
+        existing.setFacultyId(request.getFacultyId());
+        existing.setTitle(request.getTitle());
+        existing.setDescription(request.getDescription());
+        existing.setSubject(request.getSubject());
+        existing.setDeadline(request.getDeadline());
+        if (request.getTargetCourse() != null) {
+            existing.setTargetCourse(request.getTargetCourse());
+        }
+        if (request.getTargetSemester() != null) {
+            existing.setTargetSemester(request.getTargetSemester());
+        }
 
-        existingAssignment.setDescription(
-                updatedAssignment.getDescription()
-        );
-
-        existingAssignment.setSubject(
-                updatedAssignment.getSubject()
-        );
-
-        existingAssignment.setDeadline(
-                updatedAssignment.getDeadline()
-        );
-
-        return assignmentRepository.save(existingAssignment);
+        return toResponse(assignmentRepository.save(existing));
     }
 
-    // Delete assignment
+    // =========================
+    // DELETE
+    // =========================
+
     public void deleteAssignment(UUID assignmentId) {
 
         if (!assignmentRepository.existsById(assignmentId)) {
@@ -108,5 +118,23 @@ public class AssignmentService {
         }
 
         assignmentRepository.deleteById(assignmentId);
+    }
+
+    // =========================
+    // HELPER
+    // =========================
+
+    private AssignmentResponse toResponse(Assignment assignment) {
+        return new AssignmentResponse(
+                assignment.getAssignmentId(),
+                assignment.getFacultyId(),
+                assignment.getTitle(),
+                assignment.getDescription(),
+                assignment.getSubject(),
+                assignment.getDeadline(),
+                assignment.getTargetCourse(),
+                assignment.getTargetSemester(),
+                assignment.getCreatedAt()
+        );
     }
 }

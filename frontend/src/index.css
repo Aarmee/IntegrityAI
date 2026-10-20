@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-white text-zinc-900 font-sans antialiased min-h-screen selection:bg-red-600 selection:text-white;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f4f5;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b91c1c;
+}
+
+/* Print Styles for Downloadable PDF Integrity Reports */
+@media print {
+  nav, .no-print, button, .print-hidden {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+/* MS Teams Style Celebration Animations */
+@keyframes rocket-launch {
+  0% { transform: translateY(30px) scale(0.8) rotate(-15deg); opacity: 0; }
+  50% { transform: translateY(-10px) scale(1.1) rotate(5deg); opacity: 1; }
+  75% { transform: translateY(4px) scale(0.98) rotate(-2deg); }
+  100% { transform: translateY(0px) scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+@keyframes sparkle-spin {
+  0% { transform: rotate(0deg) scale(0.8); opacity: 0.6; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+  100% { transform: rotate(360deg) scale(0.8); opacity: 0.6; }
+}
+
+.animate-rocket {
+  animation: rocket-launch 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-float {
+  animation: float-subtle 3s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle-spin 2.5s ease-in-out infinite;
+}
