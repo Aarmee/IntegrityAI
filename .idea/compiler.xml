@@ -7,15 +7,25 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="submission-service" />
-        <module name="faculty-service" />
+        <module name="config-server" />
         <module name="auth-service" />
+        <module name="api-gateway" />
+        <module name="faculty-service" />
+        <module name="report-service" />
+        <module name="eureka-server" />
+        <module name="notification-service" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="api-gateway" options="-parameters" />
       <module name="auth-service" options="-parameters" />
+      <module name="config-server" options="-parameters" />
+      <module name="eureka-server" options="-parameters" />
       <module name="faculty-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
+      <module name="report-service" options="-parameters" />
       <module name="submission-service" options="-parameters" />
     </option>
   </component>

@@ -73,7 +73,8 @@ public class SubmissionService {
                 fileStorageService.store(file, assignmentId);
 
         // Fallback: If studentName or rollNumber wasn't passed by client, auto-resolve from auth-service
-        if ((studentName == null || rollNumber == null) && studentId != null) {
+        String studentEmail = null;
+        if (studentId != null) {
             try {
                 String authUrl = System.getenv().getOrDefault("AUTH_SERVICE_URL", "http://localhost:8081");
                 java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
@@ -98,6 +99,9 @@ public class SubmissionService {
                     if (semester == null && root.has("semester") && !root.get("semester").isNull()) {
                         semester = root.get("semester").asText(null);
                     }
+                    if (root.has("email") && !root.get("email").isNull()) {
+                        studentEmail = root.get("email").asText(null);
+                    }
                 }
             } catch (Exception e) {
                 System.err.println("[SubmissionService] Warning: Could not auto-resolve student profile: " + e.getMessage());
@@ -109,7 +113,7 @@ public class SubmissionService {
         submission.setStudentId(studentId);
         submission.setAssignmentId(assignmentId);
         submission.setFileType(stored.fileType());
-        submission.setFileUrl(stored.filePath());
+        submission.setFileUrl(stored.fileUrl());
         submission.setStatus(SubmissionStatus.PROCESSING);
         submission.setSubmittedAt(LocalDateTime.now());
         submission.setStudentName(studentName);
@@ -121,7 +125,7 @@ public class SubmissionService {
         Submission saved = submissionRepository.save(submission);
 
         // Trigger AI analysis (best-effort)
-        triggerAnalysis(saved);
+        triggerAnalysis(saved, stored.localTempPath());
 
         // Notify student that submission was received (best-effort)
         String notifTitle = Boolean.TRUE.equals(isDraft) ? "Draft Uploaded for Pre-Flight Scan" : "Submission Received";
@@ -129,7 +133,7 @@ public class SubmissionService {
                 ? "Your draft has been uploaded and is being analyzed. You can review the report before finalizing."
                 : "Your submission for assignment " + assignmentId + " has been received and is being analysed.";
 
-        sendNotification(studentId, "SUBMISSION_RECEIVED", notifTitle, notifMsg);
+        sendNotification(studentId, "SUBMISSION_RECEIVED", notifTitle, notifMsg, studentEmail);
 
         return saved;
     }
@@ -272,15 +276,28 @@ public class SubmissionService {
         if (sub.getFileUrl() == null || sub.getFileUrl().isBlank()) {
             throw new RuntimeException("No file URL associated with submission " + id);
         }
-        Path path = Paths.get(sub.getFileUrl());
-        if (!Files.exists(path)) {
-            throw new RuntimeException("Submission file not found on disk: " + path.getFileName());
+
+        String fileUrl = sub.getFileUrl();
+        String originalName = "submission_document";
+        if (fileUrl.contains("/")) {
+            originalName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        } else if (fileUrl.contains("\\")) {
+            originalName = fileUrl.substring(fileUrl.lastIndexOf('\\') + 1);
         }
-        Resource resource = new FileSystemResource(path);
-        String rawName = path.getFileName().toString();
-        String originalName = rawName.contains("_") ? rawName.substring(rawName.indexOf('_') + 1) : rawName;
-        String contentType = determineContentType(originalName);
-        return new FileDownloadResult(resource, originalName, contentType);
+        if (originalName.contains("_")) {
+            originalName = originalName.substring(originalName.indexOf('_') + 1);
+        }
+
+        try {
+            java.io.InputStream stream = fileStorageService.getFileStream(fileUrl);
+            byte[] bytes = stream.readAllBytes();
+            stream.close();
+            Resource resource = new org.springframework.core.io.ByteArrayResource(bytes);
+            String contentType = determineContentType(originalName);
+            return new FileDownloadResult(resource, originalName, contentType);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve submission file: " + e.getMessage(), e);
+        }
     }
 
     private String determineContentType(String filename) {
@@ -296,12 +313,13 @@ public class SubmissionService {
     // Private helpers
     // ============================================================
 
-    private void triggerAnalysis(Submission submission) {
+    private void triggerAnalysis(Submission submission, String localTempPath) {
         try {
+            String pathToAnalyze = (localTempPath != null && !localTempPath.isBlank()) ? localTempPath : submission.getFileUrl();
             AnalysisRequest request = new AnalysisRequest(
                     submission.getSubmissionId().toString(),
                     null,
-                    submission.getFileUrl(),
+                    pathToAnalyze,
                     submission.getStudentId() != null ? submission.getStudentId().toString() : null,
                     submission.getAssignmentId() != null ? submission.getAssignmentId().toString() : null
             );
@@ -321,16 +339,18 @@ public class SubmissionService {
     }
 
     private void sendNotification(UUID recipientId, String type, String title, String message) {
+        sendNotification(recipientId, type, title, message, null);
+    }
+
+    private void sendNotification(UUID recipientId, String type, String title, String message, String recipientEmail) {
         try {
             notificationClient.createNotification(
-                    new NotificationRequest(recipientId, type, title, message)
+                    new NotificationRequest(recipientId, type, title, message, recipientEmail)
             );
-    
         } catch (Exception e) {
             System.err.println(
                     "[SubmissionService] Warning: could not reach notification-service: " + e.getMessage()
             );
-    
         }
     }
 }

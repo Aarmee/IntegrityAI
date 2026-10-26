@@ -1,0 +1,223 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. POSTGRESQL DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: integrityai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-root}
+      POSTGRES_DB: integrityai_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 2. AUTH SERVICE (Port 8081)
+  # ==========================================
+  auth-service:
+    build:
+      context: ./MSA-ML/auth-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-auth-service:latest
+    container_name: integrityai-auth-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/integrityai_auth
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 3. FACULTY SERVICE (Port 8082)
+  # ==========================================
+  faculty-service:
+    build:
+      context: ./MSA-ML/faculty-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-faculty-service:latest
+    container_name: integrityai-faculty-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/integrityai_faculty
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 4. SUBMISSION SERVICE (Port 8083)
+  # ==========================================
+  submission-service:
+    build:
+      context: ./MSA-ML/submission-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-submission-service:latest
+    container_name: integrityai-submission-service
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-integrityai_submission}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-eu-north-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-integrityai-submissions-aarmee}
+      AI_ANALYSIS_SERVICE_URL: http://ai-analysis-service:8090
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      AUTH_SERVICE_URL: http://auth-service:8081
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+    ports:
+      - "8083:8083"
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 5. NOTIFICATION SERVICE (Port 8084)
+  # ==========================================
+  notification-service:
+    build:
+      context: ./MSA-ML/notification-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-notification-service:latest
+    container_name: integrityai-notification-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/integrityai_notification
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM: ${RESEND_FROM:-IntegrityAI Academic Portal <onboarding@resend.dev>}
+      RESEND_TEST_EMAIL: ${RESEND_TEST_EMAIL:-aaru140604@gmail.com}
+      AUTH_SERVICE_URL: http://auth-service:8081
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 6. REPORT SERVICE (Port 8085)
+  # ==========================================
+  report-service:
+    build:
+      context: ./MSA-ML/report-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-report-service:latest
+    container_name: integrityai-report-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/integrityai_report
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 7. AI ANALYSIS SERVICE (Port 8090 - Python FastAPI)
+  # ==========================================
+  ai-analysis-service:
+    build:
+      context: ./MSA-ML/ai-analysis-service
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-analysis-service:latest
+    container_name: integrityai-analysis-service
+    restart: unless-stopped
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      PORT: 8090
+    ports:
+      - "8090:8090"
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 8. API GATEWAY (Port 8080)
+  # ==========================================
+  api-gateway:
+    build:
+      context: ./MSA-ML/api-gateway
+      dockerfile: Dockerfile
+    image: patelaarmee06/integrityai-gateway:latest
+    container_name: integrityai-gateway
+    restart: unless-stopped
+    environment:
+      AUTH_SERVICE_URI: http://auth-service:8081
+      FACULTY_SERVICE_URI: http://faculty-service:8082
+      SUBMISSION_SERVICE_URI: http://submission-service:8083
+      NOTIFICATION_SERVICE_URI: http://notification-service:8084
+      REPORT_SERVICE_URI: http://report-service:8085
+      AI_ANALYSIS_SERVICE_URI: http://ai-analysis-service:8090
+      JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - faculty-service
+      - submission-service
+      - notification-service
+      - report-service
+      - ai-analysis-service
+    networks:
+      - integrityai-network
+
+  # ==========================================
+  # 9. FRONTEND CLIENT (Port 5173 / 80)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8080}
+    image: patelaarmee06/integrityai-frontend:latest
+    container_name: integrityai-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - integrityai-network
+
+networks:
+  integrityai-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

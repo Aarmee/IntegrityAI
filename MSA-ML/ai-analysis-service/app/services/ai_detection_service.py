@@ -20,6 +20,8 @@ import statistics
 from collections import Counter
 from typing import Optional
 
+from app.ml.classifier import get_classifier
+
 
 # Common English function words
 _FUNCTION_WORDS = frozenset({
@@ -120,6 +122,8 @@ _AI_HALLMARK_PHRASES = [
 def compute_ai_score(text: str) -> dict:
     """
     Estimate the probability (0–100) that the given text was AI-generated.
+    Uses a hybrid pipeline combining Supervised ML Classification (Stylometric TF-IDF)
+    with hallmark transitional pattern extraction and empirical dampeners.
 
     Returns:
         {
@@ -131,7 +135,7 @@ def compute_ai_score(text: str) -> dict:
     if not text or len(text.strip()) < 30:
         return {
             "ai_generated_score": 0.0,
-            "features": {"hallmark_phrases": 0.0, "burstiness": 0.0, "lexical_diversity": 0.0},
+            "features": {"hallmark_phrases": 0.0, "burstiness": 0.0, "lexical_diversity": 0.0, "ml_probability": 0.0},
             "interpretation": "Text too short for reliable analysis (< 30 chars)",
         }
 
@@ -141,9 +145,16 @@ def compute_ai_score(text: str) -> dict:
     if not words or not sentences:
         return {
             "ai_generated_score": 0.0,
-            "features": {},
+            "features": {"burstiness": 0.0, "lexical_diversity": 0.0},
             "interpretation": "Could not tokenize text",
         }
+
+    # Run Supervised ML Classifier Inference
+    ml_result = get_classifier().predict(text)
+    ml_prob = float(ml_result.get("ai_probability", 0.0))
+    stylometrics = ml_result.get("stylometric_features", {})
+    burstiness_cv = float(stylometrics.get("burstiness_cv", 0.0))
+    lexical_diversity = float(stylometrics.get("lexical_diversity_ttr", 0.0))
 
     features = {}
     text_lower = text.lower()
@@ -188,7 +199,7 @@ def compute_ai_score(text: str) -> dict:
         stdev_len = statistics.stdev(sent_lengths)
         cv = stdev_len / mean_len if mean_len > 0 else 0
 
-        # Uniform AI structure across 10+ sentences
+        # Uniform AI structure across sentences
         if cv < 0.40 and 12 <= mean_len <= 25 and hallmark_count >= 2:
             burstiness_score = min(100.0, max(50.0, (0.40 - cv) * 200.0))
         else:
@@ -197,6 +208,10 @@ def compute_ai_score(text: str) -> dict:
         burstiness_score = 0.0
 
     features["burstiness"] = round(burstiness_score, 2)
+    features["burstiness_cv"] = round(burstiness_cv, 4)
+    features["lexical_diversity"] = round(lexical_diversity, 4)
+    features["ml_probability"] = round(ml_prob, 2)
+    features["ml_model"] = ml_result.get("model_name", "Supervised ML Pipeline")
 
     # --- Empirical Dampener Adjustment ---
     # If the text has strong laboratory empirical data and few/no hallmarks, it is human lab work
@@ -207,31 +222,30 @@ def compute_ai_score(text: str) -> dict:
             "interpretation": "No AI detected (100% Human Authored • Empirical Work)",
         }
 
-    # If completely clean of hallmarks and didactic cliches
-    if hallmark_count == 0 and didactic_count == 0:
+    # If completely clean of hallmarks, didactic cliches, and ML model shows low probability
+    if hallmark_count == 0 and didactic_count == 0 and ml_prob < 35.0:
         return {
             "ai_generated_score": 0.0,
             "features": features,
             "interpretation": "No AI detected (100% Human Authored)",
         }
 
-    # Combine scores
-    if hallmark_count >= 4 or (hallmark_count >= 2 and didactic_count >= 2):
-        # Pervasive ChatGPT essay or technical lab steps
-        final_score = round(min(98.0, max(85.0, hallmark_score + (burstiness_score * 0.1))), 1)
-        interpretation = "High likelihood of AI-generated content (ChatGPT / LLM Pattern)"
-    elif hallmark_count >= 2 or (hallmark_count >= 1 and didactic_count >= 2):
-        final_score = round(min(92.0, max(68.0, hallmark_score * 0.9 + burstiness_score * 0.1)), 1)
+    # Combine ML probability and stylometric hallmarks
+    if hallmark_count >= 4 or (hallmark_count >= 2 and didactic_count >= 2) or ml_prob >= 80.0:
+        final_score = round(min(98.0, max(85.0, ml_prob, hallmark_score + (burstiness_score * 0.1))), 1)
+        interpretation = "High likelihood of AI-generated content (Supervised ML & Generative Patterns)"
+    elif hallmark_count >= 2 or (hallmark_count >= 1 and didactic_count >= 2) or ml_prob >= 50.0:
+        final_score = round(min(92.0, max(68.0, ml_prob, hallmark_score * 0.9 + burstiness_score * 0.1)), 1)
         interpretation = "Elevated indicators of AI-generated content — manual review recommended"
-    elif hallmark_count == 1 or didactic_count >= 1:
-        final_score = round(hallmark_score * 0.85, 1)
+    elif hallmark_count == 1 or didactic_count >= 1 or ml_prob >= 25.0:
+        final_score = round(max(ml_prob, hallmark_score * 0.85), 1)
         interpretation = "Indicators of AI-generated phrasing detected"
     else:
         final_score = 0.0
         interpretation = "No AI detected (100% Human Authored)"
 
     # Strict noise floor
-    if final_score < 20.0 and hallmark_count == 0:
+    if final_score < 20.0 and hallmark_count == 0 and ml_prob < 20.0:
         final_score = 0.0
         interpretation = "No AI detected (100% Human Authored)"
 

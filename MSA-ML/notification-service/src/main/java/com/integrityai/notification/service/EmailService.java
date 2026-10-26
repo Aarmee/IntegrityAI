@@ -22,7 +22,7 @@ public class EmailService {
     @Value("${mail.resend.from:IntegrityAI Academic Portal <onboarding@resend.dev>}")
     private String resendFrom;
 
-    @Value("${mail.resend.test-email:patelaarmee06@gmail.com}")
+    @Value("${mail.resend.test-email:aaru140604@gmail.com}")
     private String resendTestEmail;
 
     @Value("${mail.brevo.api-key:}")
@@ -100,6 +100,7 @@ public class EmailService {
                 .uri(URI.create("https://api.resend.com/emails"))
                 .header("Authorization", "Bearer " + resendApiKey.trim())
                 .header("Content-Type", "application/json")
+                .header("User-Agent", "IntegrityAI-Academic-Portal/1.0")
                 .timeout(Duration.ofSeconds(15))
                 .POST(HttpRequest.BodyPublishers.ofString(payload))
                 .build();
@@ -111,6 +112,35 @@ public class EmailService {
             return true;
         } else {
             log.warn("⚠️ [EmailService] Resend API rejected message to {} with status {}: {}", toEmail, response.statusCode(), response.body());
+            
+            // Resend Sandbox mode: Free tier only allows delivering to verified account email (aaru140604@gmail.com).
+            // Forward automatically so the user never misses dispatches during evaluation.
+            if (response.statusCode() == 403 && resendTestEmail != null && !resendTestEmail.isBlank() && !resendTestEmail.equalsIgnoreCase(toEmail)) {
+                log.info("ℹ️ [EmailService] Resend Sandbox mode: forwarding dispatch to verified owner inbox ({})", resendTestEmail);
+                String fallbackPayload = String.format(
+                        "{\"from\": \"%s\", \"to\": [\"%s\"], \"subject\": \"[For: %s] %s\", \"html\": %s}",
+                        escapeJson(resendFrom),
+                        escapeJson(resendTestEmail),
+                        escapeJson(toEmail),
+                        escapeJson(subject),
+                        toJsonString(htmlContent)
+                );
+                HttpRequest fallbackReq = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.resend.com/emails"))
+                        .header("Authorization", "Bearer " + resendApiKey.trim())
+                        .header("Content-Type", "application/json")
+                        .header("User-Agent", "IntegrityAI-Academic-Portal/1.0")
+                        .timeout(Duration.ofSeconds(15))
+                        .POST(HttpRequest.BodyPublishers.ofString(fallbackPayload))
+                        .build();
+                HttpResponse<String> fallbackResp = httpClient.send(fallbackReq, HttpResponse.BodyHandlers.ofString());
+                if (fallbackResp.statusCode() >= 200 && fallbackResp.statusCode() < 300) {
+                    log.info("✅ [EmailService] Delivered via Resend Sandbox to verified account inbox {} (status: {})", resendTestEmail, fallbackResp.statusCode());
+                    return true;
+                } else {
+                    log.error("❌ [EmailService] Resend Sandbox fallback failed with status {}: {}", fallbackResp.statusCode(), fallbackResp.body());
+                }
+            }
         }
 
         return false;

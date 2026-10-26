@@ -69,7 +69,35 @@ class AnalysisService:
             # --- Step 1: Extract text ---
             text = request.text_content or ""
             if not text and request.file_path:
-                text = extract_text(request.file_path)
+                if request.file_path.startswith("s3://"):
+                    try:
+                        import boto3
+                        import tempfile
+                        import os
+                        s3_path = request.file_path[5:]
+                        bucket_name, key_name = s3_path.split("/", 1)
+                        s3_cli = boto3.client(
+                            's3',
+                            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                            region_name=os.getenv('AWS_REGION', 'eu-north-1')
+                        )
+                        suffix = "." + key_name.split(".")[-1] if "." in key_name else ".docx"
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_f:
+                            s3_cli.download_fileobj(bucket_name, key_name, tmp_f)
+                            tmp_name = tmp_f.name
+                        try:
+                            text = extract_text(tmp_name)
+                        finally:
+                            try:
+                                os.remove(tmp_name)
+                            except Exception:
+                                pass
+                    except Exception as s3_err:
+                        print(f"[AnalysisService] S3 download error: {s3_err}, trying direct extraction")
+                        text = extract_text(request.file_path)
+                else:
+                    text = extract_text(request.file_path)
 
             if not text or len(text.strip()) < 5:
                 raise ValueError(

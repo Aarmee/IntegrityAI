@@ -50,7 +50,10 @@ export const DashboardPage: React.FC = () => {
             submissionApi.getSubmissionsByStudent(user.userId),
             assignmentApi.getAllAssignments().catch(() => [] as Assignment[]),
           ]);
-          setStudentSubmissions(subs);
+          const sortedSubs = [...subs].sort(
+            (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+          );
+          setStudentSubmissions(sortedSubs);
 
           const aMap: Record<string, Assignment> = {};
           allAssigns.forEach((a) => {
@@ -61,7 +64,7 @@ export const DashboardPage: React.FC = () => {
           // Fetch reports for submissions
           const rMap: Record<string, Report> = {};
           await Promise.all(
-            subs.slice(0, 15).map(async (s) => {
+            sortedSubs.slice(0, 20).map(async (s) => {
               try {
                 const rep = await reportApi.getReportBySubmission(s.submissionId);
                 if (rep) {
@@ -75,12 +78,12 @@ export const DashboardPage: React.FC = () => {
           setStudentReportsMap(rMap);
 
           // Find latest non-draft final submission for latest evaluation card
-          const nonDrafts = subs.filter((s) => !s.isDraft);
+          const nonDrafts = sortedSubs.filter((s) => !s.isDraft);
           const latestFinal = nonDrafts.length > 0 ? nonDrafts[0] : null;
           if (latestFinal && rMap[latestFinal.submissionId]) {
             setStudentLatestReport(rMap[latestFinal.submissionId]);
-          } else if (subs.length > 0 && rMap[subs[0].submissionId]) {
-            setStudentLatestReport(rMap[subs[0].submissionId]);
+          } else if (sortedSubs.length > 0 && rMap[sortedSubs[0].submissionId]) {
+            setStudentLatestReport(rMap[sortedSubs[0].submissionId]);
           }
         } else if (user.role === 'FACULTY' && user.userId) {
           const assigns = await assignmentApi.getAssignmentsByFaculty(user.userId);

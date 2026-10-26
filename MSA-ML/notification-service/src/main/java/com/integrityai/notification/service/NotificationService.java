@@ -35,7 +35,12 @@ public class NotificationService {
         notification.setTitle(request.getTitle());
         notification.setMessage(request.getMessage());
         notification.setRead(false);
-        notification.setRecipientEmail(request.getRecipientEmail());
+
+        String recipientEmail = request.getRecipientEmail();
+        if ((recipientEmail == null || recipientEmail.isBlank()) && request.getRecipientId() != null) {
+            recipientEmail = resolveEmailFromAuthService(request.getRecipientId());
+        }
+        notification.setRecipientEmail(recipientEmail);
         notification.setCreatedAt(LocalDateTime.now());
 
         // Only send real emails for allowed essential communications:
@@ -48,8 +53,8 @@ public class NotificationService {
                                       request.getType() == NotificationType.SUBMISSION_RECEIVED ||
                                       request.getType() == NotificationType.FACULTY_DEADLINE_SUMMARY;
 
-        if (shouldDispatchEmail && request.getRecipientEmail() != null && !request.getRecipientEmail().isBlank()) {
-            boolean sent = emailService.sendEmail(request.getRecipientEmail(), request.getTitle(), request.getMessage());
+        if (shouldDispatchEmail && recipientEmail != null && !recipientEmail.isBlank()) {
+            boolean sent = emailService.sendEmail(recipientEmail, request.getTitle(), request.getMessage());
             notification.setEmailSent(sent);
         } else {
             notification.setEmailSent(false);
@@ -57,6 +62,30 @@ public class NotificationService {
 
         Notification saved = notificationRepository.save(notification);
         return toResponse(saved);
+    }
+
+    private String resolveEmailFromAuthService(UUID userId) {
+        if (userId == null) return null;
+        try {
+            String authUrl = System.getenv().getOrDefault("AUTH_SERVICE_URL", "http://localhost:8081");
+            java.net.http.HttpClient httpClient = java.net.http.HttpClient.newHttpClient();
+            java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder()
+                    .uri(java.net.URI.create(authUrl + "/api/users/" + userId))
+                    .GET()
+                    .timeout(java.time.Duration.ofSeconds(3))
+                    .build();
+            java.net.http.HttpResponse<String> resp = httpClient.send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200 && resp.body() != null) {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(resp.body());
+                if (root.has("email") && !root.get("email").isNull()) {
+                    return root.get("email").asText(null);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("[NotificationService] Notice: Could not resolve email for userId " + userId + ": " + e.getMessage());
+        }
+        return null;
     }
 
     // =========================

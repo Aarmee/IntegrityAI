@@ -52,6 +52,10 @@ uploads/
 *.docx
 *.doc
 
+# Allow documentation deliverables in docs/
+!docs/**/*.docx
+!docs/**/*.pdf
+
 # Logs
 logs/
 *.log
