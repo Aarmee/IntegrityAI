@@ -10,15 +10,11 @@ services:
   # ----------------------------------------------------------------------------
   - type: web
     name: integrityai-frontend
-    runtime: docker
+    runtime: image
     plan: free
     region: singapore
-    rootDir: frontend
-    dockerfilePath: Dockerfile
-    dockerContext: .
-    envVars:
-      - key: VITE_API_GATEWAY_URL
-        value: https://integrityai-gateway.onrender.com
+    image:
+      url: docker.io/aarmee/integrityai-frontend:latest
 
   # ----------------------------------------------------------------------------
   # 2. SPRING CLOUD API GATEWAY (Public Web Service Entry Point)
