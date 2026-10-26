@@ -1,0 +1,107 @@
+# ==============================================================================
+# INTEGRITYAI: RENDER BLUEPRINT (INFRASTRUCTURE AS CODE)
+# ==============================================================================
+# Complete automated microservices deployment on Render PaaS.
+# Auto-connects PostgreSQL, API Gateway, Auth Service, AI Engine, and Frontend.
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. FRONTEND WEB CLIENT (Public Web Service)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: integrityai-frontend
+    runtime: docker
+    plan: free
+    region: singapore
+    rootDir: frontend
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: VITE_API_GATEWAY_URL
+        fromService:
+          type: web
+          name: integrityai-gateway
+          property: host
+
+  # ----------------------------------------------------------------------------
+  # 2. SPRING CLOUD API GATEWAY (Public Web Service Entry Point)
+  # ----------------------------------------------------------------------------
+  - type: web
+    name: integrityai-gateway
+    runtime: docker
+    plan: free
+    region: singapore
+    image: docker.io/aarmee/integrityai-gateway:latest
+    envVars:
+      - key: SERVER_PORT
+        value: "8080"
+      - key: AUTH_SERVICE_URI
+        value: http://integrityai-auth-service:8081
+      - key: AI_ANALYSIS_SERVICE_URI
+        value: http://integrityai-ai-service:8090
+      - key: JWT_SECRET
+        generateValue: true
+
+  # ----------------------------------------------------------------------------
+  # 3. AUTH SERVICE (Internal Private Microservice)
+  # ----------------------------------------------------------------------------
+  - type: pserv
+    name: integrityai-auth-service
+    runtime: docker
+    plan: free
+    region: singapore
+    image: docker.io/aarmee/integrityai-auth-service:latest
+    envVars:
+      - key: SERVER_PORT
+        value: "8081"
+      - key: DB_HOST
+        fromDatabase:
+          name: integrityai-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: integrityai-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: integrityai-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: integrityai-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: integrityai-db
+          property: password
+      - key: DB_SSLMODE
+        value: "require"
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: integrityai-gateway
+          envVarKey: JWT_SECRET
+
+  # ----------------------------------------------------------------------------
+  # 4. AI ANALYSIS SERVICE (Internal Private Microservice - Python FastAPI ML)
+  # ----------------------------------------------------------------------------
+  - type: pserv
+    name: integrityai-ai-service
+    runtime: docker
+    plan: free
+    region: singapore
+    image: docker.io/aarmee/integrityai-analysis-service:latest
+    envVars:
+      - key: PORT
+        value: "8090"
+
+# ------------------------------------------------------------------------------
+# 5. MANAGED POSTGRESQL DATABASE
+# ------------------------------------------------------------------------------
+databases:
+  - name: integrityai-db
+    plan: free
+    region: singapore
+    databaseName: integrityai_db
+    user: integrityai
