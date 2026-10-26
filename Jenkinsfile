@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER       = 'patelaarmee06'
-        DOCKER_CREDENTIALS_ID = 'dockerhub-patelaarmee06'
+        DOCKER_HUB_USER       = 'aarmee'
+        DOCKER_CREDENTIALS_ID = 'dockerhub-aarmee'
         IMAGE_TAG             = "${env.BUILD_NUMBER ?: 'latest'}"
         RAILWAY_SERVICE_URL   = "${env.RAILWAY_STATIC_URL ?: ''}"
     }

@@ -116,6 +116,6 @@ For each service in Railway, click **"Variables"** and add its required variable
 
 ## 3. Alternative: Deploy Pre-Built Docker Images directly from Docker Hub
 If you don't want Railway to compile code from source:
-1. Let your **Jenkins** pipeline build and push the images to `patelaarmee06/integrityai-...`.
-2. In Railway, click **"+ Create"** $\to$ **"Docker Image"** $\to$ type `patelaarmee06/integrityai-frontend:latest`.
+1. Let your **Jenkins** pipeline build and push the images to `aarmee/integrityai-...`.
+2. In Railway, click **"+ Create"** $\to$ **"Docker Image"** $\to$ type `aarmee/integrityai-frontend:latest`.
 3. Railway pulls the pre-built image from your Docker Hub account and starts it in 10 seconds!

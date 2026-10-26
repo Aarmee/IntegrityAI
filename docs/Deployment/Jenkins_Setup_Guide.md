@@ -8,7 +8,7 @@ This guide explains how to set up **Jenkins** to automatically:
 1. Pull code from GitHub.
 2. Execute automated unit & ML tests (`pytest` for 14-feature stylometric model).
 3. Build Docker container images for all microservices.
-4. Push all images to your Docker Hub account: **`patelaarmee06`**.
+4. Push all images to your Docker Hub account: **`aarmee`**.
 5. Trigger automated deployment.
 
 ---
@@ -42,10 +42,10 @@ docker run -d \
 2. Click **"+ Add Credentials"**:
    * **Kind:** Username with password
    * **Scope:** Global
-   * **Username:** `patelaarmee06` *(or your Docker Hub username)*
+   * **Username:** `aarmee` *(or your Docker Hub username)*
    * **Password:** *(Your Docker Hub password or Personal Access Token)*
-   * **ID:** `dockerhub-patelaarmee06` *(Must match the ID in Jenkinsfile)*
-   * **Description:** `Docker Hub patelaarmee06 credentials`
+   * **ID:** `dockerhub-aarmee` *(Must match the ID in Jenkinsfile)*
+   * **Description:** `Docker Hub aarmee credentials`
 3. Click **Create**.
 
 ---
@@ -73,7 +73,7 @@ docker run -d \
    * **Stage 1: Checkout Code** (Pulls latest code from GitHub)
    * **Stage 2: Run Unit & ML Tests** (Runs pytest verifying 22/22 ML tests pass)
    * **Stage 3: Build Docker Images** (Compiles JARs & builds images for all microservices)
-   * **Stage 4: Push to Docker Hub** (Tags and pushes images to `patelaarmee06/integrityai-*`)
+   * **Stage 4: Push to Docker Hub** (Tags and pushes images to `aarmee/integrityai-*`)
    * **Stage 5: Deploy to Target Environment** (Triggers Railway webhook or local deployment)
 
 ---
@@ -81,13 +81,13 @@ docker run -d \
 ## 5. Verifying on Docker Hub
 
 After the build succeeds:
-1. Log into [hub.docker.com](https://hub.docker.com) with `patelaarmee06@gmail.com`.
+1. Log into [hub.docker.com](https://hub.docker.com) with `aarmee@gmail.com`.
 2. Under **Repositories**, you will see your 8 published images:
-   * `patelaarmee06/integrityai-gateway`
-   * `patelaarmee06/integrityai-auth-service`
-   * `patelaarmee06/integrityai-faculty-service`
-   * `patelaarmee06/integrityai-submission-service`
-   * `patelaarmee06/integrityai-notification-service`
-   * `patelaarmee06/integrityai-report-service`
-   * `patelaarmee06/integrityai-analysis-service`
-   * `patelaarmee06/integrityai-frontend`
+   * `aarmee/integrityai-gateway`
+   * `aarmee/integrityai-auth-service`
+   * `aarmee/integrityai-faculty-service`
+   * `aarmee/integrityai-submission-service`
+   * `aarmee/integrityai-notification-service`
+   * `aarmee/integrityai-report-service`
+   * `aarmee/integrityai-analysis-service`
+   * `aarmee/integrityai-frontend`

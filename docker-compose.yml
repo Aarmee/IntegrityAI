@@ -30,7 +30,7 @@ services:
     build:
       context: ./MSA-ML/auth-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-auth-service:latest
+    image: aarmee/integrityai-auth-service:latest
     container_name: integrityai-auth-service
     restart: unless-stopped
     environment:
@@ -54,7 +54,7 @@ services:
     build:
       context: ./MSA-ML/faculty-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-faculty-service:latest
+    image: aarmee/integrityai-faculty-service:latest
     container_name: integrityai-faculty-service
     restart: unless-stopped
     environment:
@@ -77,7 +77,7 @@ services:
     build:
       context: ./MSA-ML/submission-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-submission-service:latest
+    image: aarmee/integrityai-submission-service:latest
     container_name: integrityai-submission-service
     restart: unless-stopped
     environment:
@@ -103,7 +103,7 @@ services:
     build:
       context: ./MSA-ML/notification-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-notification-service:latest
+    image: aarmee/integrityai-notification-service:latest
     container_name: integrityai-notification-service
     restart: unless-stopped
     environment:
@@ -130,7 +130,7 @@ services:
     build:
       context: ./MSA-ML/report-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-report-service:latest
+    image: aarmee/integrityai-report-service:latest
     container_name: integrityai-report-service
     restart: unless-stopped
     environment:
@@ -153,7 +153,7 @@ services:
     build:
       context: ./MSA-ML/ai-analysis-service
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-analysis-service:latest
+    image: aarmee/integrityai-analysis-service:latest
     container_name: integrityai-analysis-service
     restart: unless-stopped
     environment:
@@ -171,7 +171,7 @@ services:
     build:
       context: ./MSA-ML/api-gateway
       dockerfile: Dockerfile
-    image: patelaarmee06/integrityai-gateway:latest
+    image: aarmee/integrityai-gateway:latest
     container_name: integrityai-gateway
     restart: unless-stopped
     environment:
@@ -203,7 +203,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_GATEWAY_URL: ${VITE_API_GATEWAY_URL:-http://localhost:8080}
-    image: patelaarmee06/integrityai-frontend:latest
+    image: aarmee/integrityai-frontend:latest
     container_name: integrityai-frontend
     restart: unless-stopped
     ports:
