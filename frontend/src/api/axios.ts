@@ -2,7 +2,9 @@ import axios from 'axios';
 
 let rawBase = (import.meta.env.VITE_API_GATEWAY_URL || '').trim();
 
-if (!rawBase || rawBase === 'integrityai-gateway') {
+if (typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')) {
+  rawBase = 'https://integrityai-gateway.onrender.com';
+} else if (!rawBase || rawBase === 'integrityai-gateway') {
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
     rawBase = 'https://integrityai-gateway.onrender.com';
   } else {

@@ -1,7 +1,6 @@
 HELP.md
 
 # Application configuration with secrets
-src/main/resources/application.properties
 
 # Maven
 target/
