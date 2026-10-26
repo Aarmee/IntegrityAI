@@ -18,10 +18,7 @@ services:
     dockerContext: .
     envVars:
       - key: VITE_API_GATEWAY_URL
-        fromService:
-          type: web
-          name: integrityai-gateway
-          property: host
+        value: https://integrityai-gateway.onrender.com
 
   # ----------------------------------------------------------------------------
   # 2. SPRING CLOUD API GATEWAY (Public Web Service Entry Point)

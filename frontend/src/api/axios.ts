@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-export const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080';
+let rawBase = (import.meta.env.VITE_API_GATEWAY_URL || '').trim();
+
+if (!rawBase || rawBase === 'integrityai-gateway') {
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    rawBase = 'https://integrityai-gateway.onrender.com';
+  } else {
+    rawBase = 'http://localhost:8080';
+  }
+} else if (!rawBase.startsWith('http://') && !rawBase.startsWith('https://')) {
+  rawBase = `https://${rawBase}`;
+}
+
+export const API_BASE_URL = rawBase;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
