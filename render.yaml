@@ -44,9 +44,9 @@ services:
         generateValue: true
 
   # ----------------------------------------------------------------------------
-  # 3. AUTH SERVICE (Internal Private Microservice)
+  # 3. AUTH SERVICE (Web Microservice)
   # ----------------------------------------------------------------------------
-  - type: pserv
+  - type: web
     name: integrityai-auth-service
     runtime: image
     plan: free
@@ -85,9 +85,9 @@ services:
           envVarKey: JWT_SECRET
 
   # ----------------------------------------------------------------------------
-  # 4. AI ANALYSIS SERVICE (Internal Private Microservice - Python FastAPI ML)
+  # 4. AI ANALYSIS SERVICE (Web Microservice - Python FastAPI ML)
   # ----------------------------------------------------------------------------
-  - type: pserv
+  - type: web
     name: integrityai-ai-service
     runtime: image
     plan: free
