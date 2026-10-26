@@ -2,7 +2,6 @@
 # INTEGRITYAI: RENDER BLUEPRINT (INFRASTRUCTURE AS CODE)
 # ==============================================================================
 # Complete automated microservices deployment on Render PaaS.
-# Auto-connects PostgreSQL, API Gateway, Auth Service, AI Engine, and Frontend.
 # ==============================================================================
 
 services:
@@ -29,10 +28,11 @@ services:
   # ----------------------------------------------------------------------------
   - type: web
     name: integrityai-gateway
-    runtime: docker
+    runtime: image
     plan: free
     region: singapore
-    image: docker.io/aarmee/integrityai-gateway:latest
+    image:
+      url: docker.io/aarmee/integrityai-gateway:latest
     envVars:
       - key: SERVER_PORT
         value: "8080"
@@ -48,10 +48,11 @@ services:
   # ----------------------------------------------------------------------------
   - type: pserv
     name: integrityai-auth-service
-    runtime: docker
+    runtime: image
     plan: free
     region: singapore
-    image: docker.io/aarmee/integrityai-auth-service:latest
+    image:
+      url: docker.io/aarmee/integrityai-auth-service:latest
     envVars:
       - key: SERVER_PORT
         value: "8081"
@@ -88,10 +89,11 @@ services:
   # ----------------------------------------------------------------------------
   - type: pserv
     name: integrityai-ai-service
-    runtime: docker
+    runtime: image
     plan: free
     region: singapore
-    image: docker.io/aarmee/integrityai-analysis-service:latest
+    image:
+      url: docker.io/aarmee/integrityai-analysis-service:latest
     envVars:
       - key: PORT
         value: "8090"
