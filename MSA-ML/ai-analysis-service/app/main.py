@@ -7,7 +7,8 @@ Connects to MongoDB Atlas on startup.
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+import time
+from fastapi import FastAPI, Request, Response
 from fastapi.responses import JSONResponse
 from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -59,6 +60,41 @@ app = FastAPI(
 app.state.db = None
 
 app.include_router(router)
+
+# ---------------------------------------------------------------------------
+# Prometheus Metrics Endpoint & Middleware
+# ---------------------------------------------------------------------------
+
+metrics_state = {
+    "start_time": time.time(),
+    "requests_total": 0,
+    "status_counts": {},
+}
+
+@app.middleware("http")
+async def prometheus_metrics_collector(request: Request, call_next):
+    metrics_state["requests_total"] += 1
+    response = await call_next(request)
+    status_str = str(response.status_code)
+    metrics_state["status_counts"][status_str] = metrics_state["status_counts"].get(status_str, 0) + 1
+    return response
+
+@app.get("/metrics", tags=["Monitoring"], include_in_schema=False)
+async def prometheus_metrics():
+    """Expose standard Prometheus metrics format for scraping."""
+    uptime = time.time() - metrics_state["start_time"]
+    lines = [
+        "# HELP http_requests_total Total number of HTTP requests handled by ai-analysis-service",
+        "# TYPE http_requests_total counter",
+        f'http_requests_total {metrics_state["requests_total"]}',
+        "# HELP process_uptime_seconds Service uptime in seconds",
+        "# TYPE process_uptime_seconds gauge",
+        f'process_uptime_seconds {uptime:.2f}',
+    ]
+    for sc, count in metrics_state["status_counts"].items():
+        lines.append(f'http_requests_by_status_total{{status="{sc}"}} {count}')
+    lines.append("")
+    return Response(content="\n".join(lines), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 # ---------------------------------------------------------------------------
