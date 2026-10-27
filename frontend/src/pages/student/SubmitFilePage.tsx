@@ -28,7 +28,9 @@ import {
   GraduationCap,
   FileCheck,
   Download,
+  Lock,
 } from 'lucide-react';
+import { matchesCohort, formatCohortLabel } from '../../utils/cohortMatcher';
 
 const formatDeadline = (dateStr?: string) => {
   if (!dateStr) return { text: 'No deadline set', isPast: false };
@@ -55,7 +57,6 @@ export const SubmitFilePage: React.FC = () => {
 
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>('');
-  const [filterEnrolledOnly, setFilterEnrolledOnly] = useState<boolean>(true);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -102,22 +103,12 @@ export const SubmitFilePage: React.FC = () => {
     );
   }, [studentSubmissions]);
 
-  // Scoped to student's enrolled course and semester
+  // Strictly scoped to student's enrolled course and selected semester ONLY
   const enrolledAssignments = React.useMemo(() => {
     return assignments.filter((a) => {
-      if (!filterEnrolledOnly || !user?.course) return true;
-      const courseMatches =
-        !a.targetCourse ||
-        a.targetCourse === 'All Programs' ||
-        a.targetCourse.toLowerCase() === user.course.toLowerCase();
-      const semesterMatches =
-        !a.targetSemester ||
-        a.targetSemester === 'All Semesters' ||
-        !user.semester ||
-        a.targetSemester.toLowerCase() === user.semester.toLowerCase();
-      return courseMatches && semesterMatches;
+      return matchesCohort(a.targetCourse, a.targetSemester, user?.course, user?.semester);
     });
-  }, [assignments, filterEnrolledOnly, user]);
+  }, [assignments, user]);
 
   // 1. Active assignments lined up for submission (Deadline upcoming, NOT yet submitted)
   const activeSubmittableAssignments = React.useMemo(() => {
@@ -157,12 +148,23 @@ export const SubmitFilePage: React.FC = () => {
     }
   }, [activeSubmittableAssignments, location.search, selectedAssignmentId]);
 
-  const selectedAssignment = assignments.find(
+  const selectedAssignment = enrolledAssignments.find(
     (a) => a.assignmentId === selectedAssignmentId
   );
 
+  // If a passed assignment ID from another cohort was targeted, block it strictly
+  const isCohortMismatch = React.useMemo(() => {
+    if (!selectedAssignmentId) return false;
+    const foundInEnrolled = enrolledAssignments.some((a) => a.assignmentId === selectedAssignmentId);
+    return !foundInEnrolled;
+  }, [enrolledAssignments, selectedAssignmentId]);
+
   const handleRunDraftScan = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCohortMismatch) {
+      setErrorMsg('Academic Integrity Block: You cannot submit coursework assigned to another academic cohort.');
+      return;
+    }
     if (!selectedAssignmentId) {
       setErrorMsg('Please select an assignment to submit for.');
       return;
@@ -284,22 +286,12 @@ export const SubmitFilePage: React.FC = () => {
                 1. Select Course Assignment
               </label>
 
-              {user?.course && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-zinc-500">Filter:</span>
-                  <button
-                    type="button"
-                    onClick={() => setFilterEnrolledOnly(!filterEnrolledOnly)}
-                    className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                      filterEnrolledOnly
-                        ? 'bg-red-50 text-red-700 border border-red-200'
-                        : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
-                    }`}
-                  >
-                    {filterEnrolledOnly ? `My Cohort (${user.course})` : 'All Assignments'}
-                  </button>
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-zinc-500 font-medium">Enrolled Cohort:</span>
+                <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                  {formatCohortLabel(user?.course, user?.semester)}
+                </span>
+              </div>
             </div>
 
             {activeSubmittableAssignments.length === 0 && !loadingAssignments ? (
@@ -307,7 +299,7 @@ export const SubmitFilePage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>
-                    Great job! All coursework for your enrolled cohort has been submitted, or no active deadlines are open.
+                    No active coursework due for your enrolled cohort ({formatCohortLabel(user?.course, user?.semester)}).
                   </span>
                 </div>
               </div>
@@ -320,7 +312,7 @@ export const SubmitFilePage: React.FC = () => {
               >
                 {activeSubmittableAssignments.map((a) => (
                   <option key={a.assignmentId} value={a.assignmentId}>
-                    {a.title} ({a.subject}) {a.targetCourse ? `— [${a.targetCourse}]` : ''} • Due: {formatDeadline(a.deadline).text}
+                    {a.title} ({a.subject}) • Due: {formatDeadline(a.deadline).text}
                   </option>
                 ))}
               </select>
@@ -366,6 +358,28 @@ export const SubmitFilePage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Academic Integrity Cohort Lock Banner */}
+            {isCohortMismatch && (
+              <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-950 text-sm flex items-start gap-3 shadow-xs">
+                <ShieldAlert className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-red-900">Academic Integrity Cohort Lock</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-red-200 text-red-900 rounded-md font-extrabold uppercase">
+                      Restricted
+                    </span>
+                  </div>
+                  <p className="text-xs text-red-800 leading-relaxed">
+                    This coursework is designated for another cohort. 
+                    Your authorized enrollment is <strong>{formatCohortLabel(user?.course, user?.semester)}</strong>.
+                  </p>
+                  <p className="text-xs text-red-700 font-medium">
+                    Cross-department coursework submission is strictly blocked by institutional policy.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step 2: Choose File */}
@@ -375,12 +389,22 @@ export const SubmitFilePage: React.FC = () => {
               2. Upload Draft Document
             </label>
 
-            <FileUpload
-              selectedFile={file}
-              onFileSelect={(f) => setFile(f)}
-              isUploading={isUploading}
-              uploadProgress={uploadProgress}
-            />
+            {isCohortMismatch ? (
+              <div className="py-10 px-6 rounded-2xl border-2 border-dashed border-red-300 bg-red-50/60 text-center space-y-2">
+                <Lock className="w-8 h-8 text-red-600 mx-auto" />
+                <p className="text-sm font-bold text-red-950">Upload Disabled — Unauthorized Cohort</p>
+                <p className="text-xs text-red-800 max-w-md mx-auto leading-relaxed">
+                  You cannot attach documents for assignments outside your enrolled degree program ({user?.course || 'Your Program'}). Please select an assignment assigned to your cohort.
+                </p>
+              </div>
+            ) : (
+              <FileUpload
+                selectedFile={file}
+                onFileSelect={(f) => setFile(f)}
+                isUploading={isUploading}
+                uploadProgress={uploadProgress}
+              />
+            )}
 
             <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200 text-xs text-blue-900 flex items-start gap-2.5">
               <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -402,10 +426,15 @@ export const SubmitFilePage: React.FC = () => {
             </button>
             <button
               type="submit"
-              disabled={isUploading || !file || !selectedAssignmentId}
+              disabled={isUploading || !file || !selectedAssignmentId || isCohortMismatch}
               className="px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-sm transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
             >
-              {isUploading ? (
+              {isCohortMismatch ? (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Submission Locked (Cohort Mismatch)</span>
+                </>
+              ) : isUploading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   Running Pre-Flight AI Scan...

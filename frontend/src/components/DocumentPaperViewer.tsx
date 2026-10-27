@@ -151,19 +151,22 @@ export const DocumentPaperViewer: React.FC<DocumentPaperViewerProps> = ({
       );
     });
 
-    if (matched && isSentenceAi(matched)) {
-      return { isAi: true, match: matched };
+    if (matched) {
+      if (isSentenceAi(matched)) {
+        return { isAi: true, match: matched };
+      }
+      return { isAi: false, match: matched };
     }
 
-    if (overallAiScore >= 45 && sTrim.split(/\s+/).length >= 3) {
+    if (overallAiScore >= 70 && effectiveSentences.some(isSentenceAi) && sTrim.split(/\s+/).length >= 8) {
       return {
         isAi: true,
-        match: matched || {
+        match: {
           sentence: sTrim,
           text: sTrim,
           ai_score: overallAiScore,
           is_ai: true,
-          reason: 'Consistent with AI generative document pattern',
+          reason: 'Consistent with surrounding AI generative document pattern',
         },
       };
     }

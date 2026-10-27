@@ -22,7 +22,9 @@ import {
   ShieldCheck,
   ExternalLink,
   GraduationCap,
+  Calendar,
 } from 'lucide-react';
+import { matchesCohort, formatCohortLabel, formatDeadline } from '../utils/cohortMatcher';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -30,6 +32,7 @@ export const DashboardPage: React.FC = () => {
   // Student specific data
   const [studentSubmissions, setStudentSubmissions] = useState<Submission[]>([]);
   const [studentAssignmentsMap, setStudentAssignmentsMap] = useState<Record<string, Assignment>>({});
+  const [allAssignments, setAllAssignments] = useState<Assignment[]>([]);
   const [studentLatestReport, setStudentLatestReport] = useState<Report | null>(null);
   const [studentReportsMap, setStudentReportsMap] = useState<Record<string, Report>>({});
 
@@ -60,6 +63,7 @@ export const DashboardPage: React.FC = () => {
             aMap[a.assignmentId] = a;
           });
           setStudentAssignmentsMap(aMap);
+          setAllAssignments(allAssigns);
 
           // Fetch reports for submissions
           const rMap: Record<string, Report> = {};
@@ -134,6 +138,19 @@ export const DashboardPage: React.FC = () => {
   const draftStudentSubmissionsCount = React.useMemo(() => {
     return studentSubmissions.filter((s) => Boolean(s.isDraft)).length;
   }, [studentSubmissions]);
+
+  // Open / pending assignments matching student's enrolled cohort that are NOT yet submitted
+  const pendingCohortAssignments = React.useMemo(() => {
+    if (user?.role !== 'STUDENT') return [];
+    const submittedIds = new Set(
+      studentSubmissions.filter((s) => !s.isDraft).map((s) => s.assignmentId)
+    );
+    return allAssignments.filter((a) => {
+      const isEnrolled = matchesCohort(a.targetCourse, a.targetSemester, user.course, user.semester);
+      const alreadySubmitted = submittedIds.has(a.assignmentId);
+      return isEnrolled && !alreadySubmitted;
+    });
+  }, [allAssignments, studentSubmissions, user]);
 
   // If Admin, display the full system overview!
   if (user?.role === 'ADMIN') {
@@ -273,6 +290,90 @@ export const DashboardPage: React.FC = () => {
               {user.semester ? `Semester ${user.semester}` : 'Active Academic Term'}
             </div>
           </div>
+        </div>
+
+        {/* Open Cohort Assignments Card */}
+        <div className="p-6 rounded-2xl bg-white border border-zinc-200 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-red-600" />
+                <h2 className="text-base font-bold text-black">
+                  Active Coursework Assignments
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-red-100 text-red-700 border border-red-200">
+                  {pendingCohortAssignments.length} Pending
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 mt-0.5 font-medium">
+                Syllabus coursework officially authorized for your cohort ({formatCohortLabel(user.course, user.semester)})
+              </p>
+            </div>
+            <Link
+              to="/student/submit"
+              className="text-xs text-red-600 hover:text-red-800 font-bold transition-colors flex items-center gap-1 self-start sm:self-auto"
+            >
+              <span>Submit Coursework</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {pendingCohortAssignments.length === 0 ? (
+            <div className="py-8 text-center space-y-2 border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+              <p className="text-sm font-bold text-zinc-800">You are completely caught up!</p>
+              <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                No pending coursework is currently open for {formatCohortLabel(user.course, user.semester)}. Any new assignments published by your faculty will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingCohortAssignments.map((a) => {
+                const deadlineInfo = formatDeadline(a.deadline);
+                return (
+                  <div
+                    key={a.assignmentId}
+                    className="p-5 rounded-2xl border border-zinc-200 bg-gradient-to-b from-white to-zinc-50/60 hover:border-red-300 hover:shadow-xs transition-all flex flex-col justify-between space-y-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-red-700 bg-red-50 border border-red-100 px-2 py-0.5 rounded-md">
+                          {a.subject}
+                        </span>
+                        <span className={`text-[11px] font-semibold flex items-center gap-1 ${
+                          deadlineInfo.isPast ? 'text-rose-600' : 'text-zinc-500'
+                        }`}>
+                          <Calendar className="w-3 h-3 text-zinc-400" />
+                          {deadlineInfo.text}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-sm text-black mt-2 line-clamp-2 leading-snug">
+                        {a.title}
+                      </h3>
+                      {a.description && (
+                        <p className="text-xs text-zinc-600 mt-1 line-clamp-2">
+                          {a.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-zinc-100 flex items-center justify-between">
+                      <span className="text-[11px] font-medium text-zinc-500">
+                        {a.targetSemester || `Semester ${user.semester || '3'}`}
+                      </span>
+                      <Link
+                        to={`/student/submit?assignmentId=${a.assignmentId}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-xs transition-all shadow-2xs"
+                      >
+                        <FileUp className="w-3.5 h-3.5" />
+                        <span>Submit File</span>
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Recent Submissions Table */}

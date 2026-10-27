@@ -1,0 +1,186 @@
+"""
+Seeds MongoDB Atlas collections (submissions & analyses) with realistic demo data.
+"""
+
+import os
+from datetime import datetime, timezone, timedelta
+from pymongo import MongoClient
+
+MONGODB_URI = os.getenv(
+    "MONGODB_URI",
+    "mongodb://localhost:27017/integrityai_submission"
+)
+
+client = MongoClient(MONGODB_URI)
+db = client["integrityai_submission"]
+
+submissions_col = db["submissions"]
+analyses_col = db["analyses"]
+
+demo_submissions = [
+    {
+        "_id": "77777777-7777-7777-7777-777777777701",
+        "studentId": "22222222-2222-2222-2222-222222222201",
+        "assignmentId": "44444444-4444-4444-4444-444444444401",
+        "studentName": "Aarav Patel",
+        "rollNumber": "MCA202401",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-1/77777777-7777_Cloud_Microservices_Report_Aarav.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 3.8,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=3),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777702",
+        "studentId": "22222222-2222-2222-2222-222222222202",
+        "assignmentId": "44444444-4444-4444-4444-444444444401",
+        "studentName": "Priya Sharma",
+        "rollNumber": "MCA202402",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "PDF",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-1/77777777-7778_Cloud_Microservices_Priya.pdf",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 8.4,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=3),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777703",
+        "studentId": "22222222-2222-2222-2222-222222222203",
+        "assignmentId": "44444444-4444-4444-4444-444444444401",
+        "studentName": "Rohan Verma",
+        "rollNumber": "MCA202403",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-1/77777777-7779_Cloud_Microservices_Rohan.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 12.0,
+        "draftScoreSimilarity": 78.4,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=2),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777704",
+        "studentId": "22222222-2222-2222-2222-222222222204",
+        "assignmentId": "44444444-4444-4444-4444-444444444401",
+        "studentName": "Sneha Reddy",
+        "rollNumber": "MCA202404",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-1/77777777-7780_Cloud_Microservices_Sneha.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 8.5,
+        "draftScoreSimilarity": 76.5,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=2),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777705",
+        "studentId": "22222222-2222-2222-2222-222222222205",
+        "assignmentId": "44444444-4444-4444-4444-444444444402",
+        "studentName": "Aditya Kumar",
+        "rollNumber": "CS202315",
+        "course": "B.Tech CS",
+        "semester": "Semester 5",
+        "fileType": "PDF",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-2/77777777-7781_NLP_Stylometry_Aditya.pdf",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 94.8,
+        "draftScoreSimilarity": 5.2,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=1),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777706",
+        "studentId": "22222222-2222-2222-2222-222222222206",
+        "assignmentId": "44444444-4444-4444-4444-444444444402",
+        "studentName": "Ananya Sen",
+        "rollNumber": "CS202316",
+        "course": "B.Tech CS",
+        "semester": "Semester 5",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-2/77777777-7782_NLP_Stylometry_Ananya.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 6.1,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=1),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777707",
+        "studentId": "22222222-2222-2222-2222-222222222207",
+        "assignmentId": "44444444-4444-4444-4444-444444444404",
+        "studentName": "Varun Nair",
+        "rollNumber": "CS202317",
+        "course": "B.Tech CS",
+        "semester": "Semester 5",
+        "fileType": "PDF",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-4/77777777-7783_OS_Scheduling_Varun.pdf",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 11.4,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=2),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777708",
+        "studentId": "22222222-2222-2222-2222-222222222208",
+        "assignmentId": "44444444-4444-4444-4444-444444444404",
+        "studentName": "Tanvi Joshi",
+        "rollNumber": "CS202318",
+        "course": "B.Tech CS",
+        "semester": "Semester 5",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-4/77777777-7784_OS_Scheduling_Tanvi.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 34.0,
+        "draftScoreSimilarity": 28.5,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=1),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777709",
+        "studentId": "22222222-2222-2222-2222-222222222209",
+        "assignmentId": "44444444-4444-4444-4444-444444444403",
+        "studentName": "Kabir Mehta",
+        "rollNumber": "MCA202405",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "PDF",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-3/77777777-7785_DB_Sharding_Kabir.pdf",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 4.5,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=4),
+    },
+    {
+        "_id": "77777777-7777-7777-7777-777777777710",
+        "studentId": "22222222-2222-2222-2222-222222222210",
+        "assignmentId": "44444444-4444-4444-4444-444444444403",
+        "studentName": "Riya Choudhury",
+        "rollNumber": "MCA202406",
+        "course": "MCA",
+        "semester": "Semester 3",
+        "fileType": "DOCX",
+        "fileUrl": "s3://integrityai-submissions-aarmee/submissions/asgn-3/77777777-7786_DB_Sharding_Riya.docx",
+        "status": "ANALYZED",
+        "isDraft": False,
+        "draftScoreAi": 0.0,
+        "draftScoreSimilarity": 7.2,
+        "submittedAt": datetime.now(timezone.utc) - timedelta(days=3),
+    }
+]
+
+for sub in demo_submissions:
+    submissions_col.replace_one({"_id": sub["_id"]}, sub, upsert=True)
+
+print(f"Successfully upserted {len(demo_submissions)} submissions into MongoDB Atlas.")

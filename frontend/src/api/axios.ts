@@ -83,6 +83,59 @@ export function getErrorMessage(error: unknown): string {
   // Transform technical, SQL, or database error messages into human-friendly sentences:
   const lower = rawMsg.toLowerCase();
 
+  // Feign / Microservice connection errors (e.g. "Connection refused executing GET http://...")
+  if (
+    lower.includes('connection refused') ||
+    lower.includes('connectexception') ||
+    lower.includes('feign') ||
+    lower.includes('executing get') ||
+    lower.includes('executing post') ||
+    lower.includes('bad gateway') ||
+    lower.includes('service unavailable') ||
+    lower.includes('502') ||
+    lower.includes('503')
+  ) {
+    if (lower.includes('faculty') || lower.includes('assignments') || lower.includes('8082')) {
+      return 'The Academic Faculty Service is currently synchronizing coursework. Please refresh or try again in a few moments.';
+    }
+    if (lower.includes('analysis') || lower.includes('8090')) {
+      return 'The AI Analysis Engine is processing queued scans. Your report will be ready shortly.';
+    }
+    if (lower.includes('submission') || lower.includes('8083')) {
+      return 'The Submission Storage Service is temporarily busy. Please re-try submitting in a moment.';
+    }
+    if (lower.includes('notification') || lower.includes('8084')) {
+      return 'Notification delivery is queued and will update shortly.';
+    }
+    return 'The requested university microservice is temporarily synchronizing. Please try again in a moment.';
+  }
+
+  // Resource Not Found
+  if (lower.includes('not found') || lower.includes('404')) {
+    if (lower.includes('assignment')) {
+      return 'The selected assignment could not be found or has been archived by faculty.';
+    }
+    if (lower.includes('submission')) {
+      return 'The requested submission record could not be found.';
+    }
+    return 'The requested academic record was not found.';
+  }
+
+  // Enum or internal parsing exceptions
+  if (
+    lower.includes('no enum constant') ||
+    lower.includes('illegalargumentexception') ||
+    lower.includes('json parse error') ||
+    lower.includes('httpmessagenotreadableexception')
+  ) {
+    return 'Unable to process action due to an unexpected format. Please refresh the page.';
+  }
+
+  // S3 or AWS storage errors
+  if (lower.includes('s3') || lower.includes('amazons3') || lower.includes('bucket')) {
+    return 'Cloud document storage is temporarily busy. Please retry your file upload in a moment.';
+  }
+
   if (lower.includes('value too long') || lower.includes('character varying')) {
     return 'One of the selected options or input values exceeds the allowed length. Please shorten your selection.';
   }

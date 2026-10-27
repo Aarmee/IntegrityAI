@@ -1,0 +1,16 @@
+\c integrityai_faculty;
+
+-- Set assignments faculty_id to match user_id directly
+UPDATE assignments SET faculty_id = '11111111-1111-1111-1111-111111111101' WHERE assignment_id IN ('44444444-4444-4444-4444-444444444401', '44444444-4444-4444-4444-444444444403', '44444444-4444-4444-4444-444444444406');
+UPDATE assignments SET faculty_id = '11111111-1111-1111-1111-111111111102' WHERE assignment_id IN ('44444444-4444-4444-4444-444444444402', '44444444-4444-4444-4444-444444444405');
+UPDATE assignments SET faculty_id = '11111111-1111-1111-1111-111111111104' WHERE assignment_id IN ('44444444-4444-4444-4444-444444444404');
+
+\c integrityai_notification;
+
+-- Update notification types to exact NotificationType enum constants
+UPDATE notifications SET type = 'WELCOME' WHERE type LIKE '%WELCOME%';
+UPDATE notifications SET type = 'SUBMISSION_RECEIVED' WHERE type LIKE '%SUBMISSION%';
+UPDATE notifications SET type = 'REPORT_READY' WHERE type LIKE '%INTEGRITY%' OR type LIKE '%REPORT%';
+UPDATE notifications SET type = 'ASSIGNMENT_DEADLINE' WHERE type LIKE '%ASSIGNMENT%';
+UPDATE notifications SET type = 'FACULTY_DEADLINE_SUMMARY' WHERE type LIKE '%FACULTY%';
+UPDATE notifications SET type = 'GENERAL' WHERE type NOT IN ('SUBMISSION_RECEIVED', 'ANALYSIS_COMPLETE', 'REPORT_READY', 'ASSIGNMENT_DEADLINE', 'WELCOME', 'FACULTY_DEADLINE_SUMMARY', 'GENERAL');

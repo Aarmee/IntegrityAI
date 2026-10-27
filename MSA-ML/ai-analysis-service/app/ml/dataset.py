@@ -58,6 +58,15 @@ HUMAN_CORPUS = [
 
     # 15. Student Machine Learning Assignment Notes
     """For the Kaggle house price prediction task, I tried three baseline models: Ridge Regression, a 3-layer MLP, and XGBoost. The raw dataset had lots of missing values in `LotFrontage` and `Alley`, which I imputed using median values grouped by neighborhood. One-hot encoding the categorical variables blew up the feature dimension to 240 columns. XGBoost with a learning rate of 0.05 and max depth 4 scored an RMSE of 0.124 on the log-transformed sale price, comfortably beating the neural net which kept overfitting after epoch 30.""",
+
+    # 16. Student Microservices Project Notes
+    """In our microservice project, we built services for auth, submissions, and reports using Spring Boot and Docker. We used an API gateway for routing and Eureka server for service discovery. Monolithic architecture is simpler to deploy initially, but microservices allowed each team member to work on separate services independently. We used OpenFeign for HTTP communication between services and Prometheus with Grafana for monitoring container metrics. Setting up Docker Compose locally helped test inter-service communication before deployment.""",
+
+    # 17. Student DevOps & Cloud Architecture Coursework
+    """We configured a CI/CD pipeline using Jenkins to build and package our microservices into Docker images. Prometheus scrapes application metrics from the Spring Boot actuator endpoints, while Grafana dashboards display CPU, memory, and request latency in real time. We chose PostgreSQL for relational data and MongoDB for unstructured logs. Managing configuration across multiple services was challenging, but containerizing each service made deployment consistent across our local machines.""",
+
+    # 18. Student Cloud Computing Assignment
+    """Integrity AI is a microservice project. We used Jenkins, Docker, Prometheus, and Grafana in this project. Also we used Eureka server for discovery and an API gateway for reverse proxying. Monolithic architecture is often better for simple applications than microservice architecture because microservices are complex to manage, but microservices scale better. In microservices we used OpenFeign for communication between services.""",
 ]
 
 # ---------------------------------------------------------------------------

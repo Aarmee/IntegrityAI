@@ -37,17 +37,49 @@ def extract_text(file_path: str) -> str:
     path = Path(cleaned_path)
 
     if not path.exists():
-        # Try alternate path separators for Windows / Linux cross-compatibility
-        alt_win = Path(cleaned_path.replace("/", "\\"))
-        if alt_win.exists():
-            path = alt_win
-        else:
-            alt_posix = Path(cleaned_path.replace("\\", "/"))
-            if alt_posix.exists():
-                path = alt_posix
+        # Check if this is an S3 URL or if the file exists in the shared uploads directory
+        upload_dir = Path("/tmp/integrityai_uploads")
+        if cleaned_path.startswith("s3://"):
+            raw_s3 = cleaned_path[5:]
+            _, s3_key = raw_s3.split("/", 1) if "/" in raw_s3 else ("", raw_s3)
+            fname = Path(s3_key).name
+            s3_candidates = [
+                upload_dir / s3_key,
+                upload_dir / s3_key.replace("submissions/", ""),
+                upload_dir / fname,
+            ]
+            if upload_dir.exists() and fname:
+                try:
+                    s3_candidates.extend(list(upload_dir.rglob(fname)))
+                except Exception:
+                    pass
+            for cand in s3_candidates:
+                if cand and cand.is_file() and cand.stat().st_size > 0:
+                    path = cand
+                    break
+
+        if not path.exists() and upload_dir.exists():
+            fname = Path(cleaned_path).name
+            try:
+                for match in upload_dir.rglob(fname):
+                    if match.is_file() and match.stat().st_size > 0:
+                        path = match
+                        break
+            except Exception:
+                pass
+
+        if not path.exists():
+            # Try alternate path separators for Windows / Linux cross-compatibility
+            alt_win = Path(cleaned_path.replace("/", "\\"))
+            if alt_win.exists():
+                path = alt_win
             else:
-                print(f"[text_extractor] File not found: {file_path}")
-                return ""
+                alt_posix = Path(cleaned_path.replace("\\", "/"))
+                if alt_posix.exists():
+                    path = alt_posix
+                else:
+                    print(f"[text_extractor] File not found: {file_path}")
+                    return ""
 
     suffix = path.suffix.lower()
 

@@ -18,6 +18,7 @@ import {
   Edit3,
   Save,
   X,
+  Lock,
 } from 'lucide-react';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
@@ -175,7 +176,7 @@ export const ProfilePage: React.FC = () => {
         name: editName,
         phoneNumber: editPhone,
         rollNumber: effectiveUser?.role === 'STUDENT' ? editRoll : undefined,
-        course: effectiveUser?.role === 'STUDENT' ? editCourse : editFacultyCourses.join(', '),
+        course: effectiveUser?.role === 'STUDENT' ? (effectiveUser.course || editCourse) : editFacultyCourses.join(', '),
         semester: effectiveUser?.role === 'STUDENT' ? editSemester : editFacultySemesters.join(', '),
         department: effectiveUser?.role === 'FACULTY' ? editDept : undefined,
         assignedCourses: effectiveUser?.role === 'FACULTY'
@@ -338,23 +339,22 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Degree / Course
+                  <label className="block text-xs font-semibold text-zinc-700 mb-1 flex items-center justify-between">
+                    <span>Enrolled Degree / Program</span>
+                    <span className="text-[10px] text-zinc-500 font-medium flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-zinc-400" />
+                      Fixed by Registrar
+                    </span>
                   </label>
-                  <select
-                    value={editCourse}
-                    onChange={(e) => setEditCourse(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-xl text-black text-xs font-semibold focus:outline-none focus:border-red-600 shadow-xs"
-                  >
-                    {COMPREHENSIVE_COURSES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  <div className="px-3.5 py-2.5 bg-zinc-100 border border-zinc-200 rounded-xl text-zinc-800 text-xs font-bold flex items-center justify-between shadow-2xs">
+                    <span>{effectiveUser?.course || editCourse || 'Enrolled Program'}</span>
+                    <Lock className="w-3.5 h-3.5 text-zinc-400" />
+                  </div>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    Current Semester
+                    Current Semester (Term Progression)
                   </label>
                   <select
                     value={editSemester}
@@ -365,6 +365,9 @@ export const ProfilePage: React.FC = () => {
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
+                  <p className="text-[11px] text-zinc-500 mt-1">
+                    Updating your term automatically recalibrates your open coursework and cohort syllabus.
+                  </p>
                 </div>
               </div>
             </div>

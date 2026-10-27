@@ -222,30 +222,32 @@ def compute_ai_score(text: str) -> dict:
             "interpretation": "No AI detected (100% Human Authored • Empirical Work)",
         }
 
-    # If completely clean of hallmarks, didactic cliches, and ML model shows low probability
-    if hallmark_count == 0 and didactic_count == 0 and ml_prob < 35.0:
+    # Clean Human Text Safeguard:
+    # Hand-typed student coursework, notes, and essays without generative boilerplate
+    # strictly yield 0.0% AI score.
+    if hallmark_count == 0 and didactic_count == 0:
         return {
             "ai_generated_score": 0.0,
             "features": features,
-            "interpretation": "No AI detected (100% Human Authored)",
+            "interpretation": "No AI detected (100% Human Authored / Low Risk)",
         }
 
-    # Combine ML probability and stylometric hallmarks
-    if hallmark_count >= 4 or (hallmark_count >= 2 and didactic_count >= 2) or ml_prob >= 80.0:
+    # Combine ML probability and stylometric hallmarks when generative indicators exist
+    if hallmark_count >= 4 or (hallmark_count >= 2 and didactic_count >= 2) or (ml_prob >= 80.0 and hallmark_count >= 1):
         final_score = round(min(98.0, max(85.0, ml_prob, hallmark_score + (burstiness_score * 0.1))), 1)
         interpretation = "High likelihood of AI-generated content (Supervised ML & Generative Patterns)"
-    elif hallmark_count >= 2 or (hallmark_count >= 1 and didactic_count >= 2) or ml_prob >= 50.0:
+    elif hallmark_count >= 2 or (hallmark_count >= 1 and didactic_count >= 2) or (ml_prob >= 50.0 and hallmark_count >= 1):
         final_score = round(min(92.0, max(68.0, ml_prob, hallmark_score * 0.9 + burstiness_score * 0.1)), 1)
         interpretation = "Elevated indicators of AI-generated content — manual review recommended"
-    elif hallmark_count == 1 or didactic_count >= 1 or ml_prob >= 25.0:
-        final_score = round(max(ml_prob, hallmark_score * 0.85), 1)
+    elif hallmark_count == 1 or didactic_count >= 1:
+        final_score = round(max(ml_prob * 0.6, hallmark_score * 0.85), 1)
         interpretation = "Indicators of AI-generated phrasing detected"
     else:
         final_score = 0.0
         interpretation = "No AI detected (100% Human Authored)"
 
     # Strict noise floor
-    if final_score < 20.0 and hallmark_count == 0 and ml_prob < 20.0:
+    if final_score < 25.0:
         final_score = 0.0
         interpretation = "No AI detected (100% Human Authored)"
 
@@ -329,8 +331,8 @@ def compute_sentence_level_breakdown(
             is_ai = True
             sentence_ai_score = 82.0
             reason = "Formulaic didactic advice structure typical of LLM generation"
-        elif overall_ai_score >= 45.0 and len(words) >= 3:
-            # In a heavily AI-generated document (overall AI score >= 45%), all sentences in the generative flow are AI
+        elif overall_ai_score >= 70.0 and matched_hallmarks and len(words) >= 6:
+            # In a confirmed heavily AI-generated document with active hallmarks, flag surrounding flow
             is_ai = True
             sentence_ai_score = round(max(75.0, overall_ai_score), 1)
             reason = "Consistent with surrounding AI-generated document flow"

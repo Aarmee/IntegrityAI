@@ -32,7 +32,7 @@ export const SentenceHighlighter: React.FC<SentenceHighlighterProps> = ({
     return 'HUMAN';
   };
 
-  // If no sentences from analysis_service, synthesize simple preview if fallbackText exists
+  // If no sentences from analysis_service, synthesize clean preview if fallbackText exists
   const effectiveSentences: SentenceBreakdown[] =
     sentences && sentences.length > 0
       ? sentences
@@ -40,12 +40,12 @@ export const SentenceHighlighter: React.FC<SentenceHighlighterProps> = ({
       ? fallbackText
           .split(/(?<=[.?!])\s+/)
           .filter((s) => s.trim().length > 0)
-          .map((s, idx) => ({
+          .map((s) => ({
             sentence: s,
             text: s,
-            ai_score: idx % 3 === 0 ? 75 : 10,
-            similarity_score: idx % 5 === 0 ? 55 : 5,
-            label: idx % 3 === 0 ? 'AI_GENERATED' : idx % 5 === 0 ? 'PLAGIARIZED' : 'HUMAN',
+            ai_score: 0,
+            similarity_score: 0,
+            label: 'HUMAN',
           }))
       : [];
 

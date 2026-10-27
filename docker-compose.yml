@@ -24,6 +24,25 @@ services:
       - integrityai-network
 
   # ==========================================
+  # 1.5. EUREKA DISCOVERY SERVER (Port 8761)
+  # ==========================================
+  eureka-server:
+    build:
+      context: ./MSA-ML/eureka-server
+      dockerfile: Dockerfile
+    image: aarmee/integrityai-eureka-server:latest
+    container_name: integrityai-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      SERVER_PORT: 8761
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+    networks:
+      - integrityai-network
+
+  # ==========================================
   # 2. AUTH SERVICE (Port 8081)
   # ==========================================
   auth-service:
@@ -39,11 +58,16 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-root}
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     networks:
       - integrityai-network
 
@@ -62,11 +86,16 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8082:8082"
     depends_on:
       postgres:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     networks:
       - integrityai-network
 
@@ -90,9 +119,18 @@ services:
       AI_ANALYSIS_SERVICE_URL: http://ai-analysis-service:8090
       NOTIFICATION_SERVICE_URL: http://notification-service:8084
       AUTH_SERVICE_URL: http://auth-service:8081
+      FACULTY_SERVICE_URL: http://faculty-service:8082
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8083:8083"
+    volumes:
+      - uploads_data:/tmp/integrityai_uploads
+    depends_on:
+      eureka-server:
+        condition: service_started
     networks:
       - integrityai-network
 
@@ -115,11 +153,16 @@ services:
       RESEND_TEST_EMAIL: ${RESEND_TEST_EMAIL:-aaru140604@gmail.com}
       AUTH_SERVICE_URL: http://auth-service:8081
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8084:8084"
     depends_on:
       postgres:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     networks:
       - integrityai-network
 
@@ -138,11 +181,20 @@ services:
       DB_USERNAME: ${DB_USERNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-root}
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      AI_ANALYSIS_SERVICE_URL: http://ai-analysis-service:8090
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8085:8085"
+    volumes:
+      - uploads_data:/tmp/integrityai_uploads
     depends_on:
       postgres:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     networks:
       - integrityai-network
 
@@ -159,8 +211,14 @@ services:
     environment:
       MONGODB_URI: ${MONGODB_URI}
       PORT: 8090
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-eu-north-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-integrityai-submissions-aarmee}
     ports:
       - "8090:8090"
+    volumes:
+      - uploads_data:/tmp/integrityai_uploads
     networks:
       - integrityai-network
 
@@ -182,9 +240,13 @@ services:
       REPORT_SERVICE_URI: http://report-service:8085
       AI_ANALYSIS_SERVICE_URI: http://ai-analysis-service:8090
       JWT_SECRET: ${JWT_SECRET:-integrityai-secret-key-for-jwt-authentication-2026-must-be-at-least-256-bits}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      EUREKA_REGISTER: ${EUREKA_REGISTER:-true}
+      EUREKA_FETCH: ${EUREKA_FETCH:-true}
     ports:
       - "8080:8080"
     depends_on:
+      - eureka-server
       - auth-service
       - faculty-service
       - submission-service
@@ -269,3 +331,4 @@ volumes:
   postgres_data:
   prometheus_data:
   grafana_data:
+  uploads_data:
